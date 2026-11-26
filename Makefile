@@ -58,7 +58,13 @@ ifneq ($(PLATFORM),)
 	PLATFORM_FLAG="--platform"
 endif
 
-REGISTRY ?= us-central1-docker.pkg.dev/k8s-staging-images/ingress-nginx
+# Controller image name (without tag). The e2e and dev scripts set REGISTRY and
+# expect the upstream $(REGISTRY)/controller naming, so keep that when it is set.
+ifeq ($(origin REGISTRY),undefined)
+CONTROLLER_IMAGE ?= docker.io/codertao2/ingress-nginx
+else
+CONTROLLER_IMAGE ?= $(REGISTRY)/controller
+endif
 
 BASE_IMAGE ?= $(shell cat NGINX_BASE)
 
@@ -78,7 +84,7 @@ image: clean-image ## Build image for a particular arch.
 		--build-arg TARGETARCH="$(ARCH)" \
 		--build-arg COMMIT_SHA="$(COMMIT_SHA)" \
 		--build-arg BUILD_ID="$(BUILD_ID)" \
-		-t $(REGISTRY)/controller:$(TAG) rootfs
+		-t $(CONTROLLER_IMAGE):$(TAG) rootfs
 
 .PHONY: gosec
 gosec:
@@ -94,18 +100,18 @@ image-chroot: clean-chroot-image ## Build image for a particular arch.
 		--build-arg TARGETARCH="$(ARCH)" \
 		--build-arg COMMIT_SHA="$(COMMIT_SHA)" \
 		--build-arg BUILD_ID="$(BUILD_ID)" \
-		-t $(REGISTRY)/controller-chroot:$(TAG) rootfs -f rootfs/Dockerfile-chroot
+		-t $(CONTROLLER_IMAGE)-chroot:$(TAG) rootfs -f rootfs/Dockerfile-chroot
 
 .PHONY: clean-image
 clean-image: ## Removes local image
-	echo "removing old image $(REGISTRY)/controller:$(TAG)"
-	@docker rmi -f $(REGISTRY)/controller:$(TAG) || true
+	echo "removing old image $(CONTROLLER_IMAGE):$(TAG)"
+	@docker rmi -f $(CONTROLLER_IMAGE):$(TAG) || true
 
 
 .PHONY: clean-chroot-image
 clean-chroot-image: ## Removes local image
-	echo "removing old image $(REGISTRY)/controller-chroot:$(TAG)"
-	@docker rmi -f $(REGISTRY)/controller-chroot:$(TAG) || true
+	echo "removing old image $(CONTROLLER_IMAGE)-chroot:$(TAG)"
+	@docker rmi -f $(CONTROLLER_IMAGE)-chroot:$(TAG) || true
 
 
 .PHONY: build
@@ -267,7 +273,7 @@ release: builder clean
 		--build-arg VERSION="$(TAG)" \
 		--build-arg COMMIT_SHA="$(COMMIT_SHA)" \
 		--build-arg BUILD_ID="$(BUILD_ID)" \
-		-t $(REGISTRY)/controller:$(TAG) rootfs
+		-t $(CONTROLLER_IMAGE):$(TAG) rootfs
 
 	docker buildx build \
 		--no-cache \
@@ -280,7 +286,7 @@ release: builder clean
 		--build-arg VERSION="$(TAG)" \
 		--build-arg COMMIT_SHA="$(COMMIT_SHA)" \
 		--build-arg BUILD_ID="$(BUILD_ID)" \
-		-t $(REGISTRY)/controller-chroot:$(TAG) rootfs -f rootfs/Dockerfile-chroot
+		-t $(CONTROLLER_IMAGE)-chroot:$(TAG) rootfs -f rootfs/Dockerfile-chroot
 
 .PHONY: build-docs
 build-docs:
