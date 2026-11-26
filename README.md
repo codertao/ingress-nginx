@@ -2,7 +2,9 @@
 
 The original ingress-nginx was retired.
 
-This fork uses AI to make bare minimum updates to keep NGINX up to date.
+This fork uses AI to make bare minimum updates to keep NGINX up to date and resolve CVEs. This is currently on nginx 1.31.10. Support is best effort, but you shouldn't expect much.
+
+amd64 image is available at `docker.io/codertao2/ingress-nginx:v1.16.0` , if you need one of the arm architectures, you'll need to build that yourself.
 
 Work happens on the `public-v1.16` branch.
 
